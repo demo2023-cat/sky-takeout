@@ -1,6 +1,7 @@
 package com.sky.context;
 
-public class BaseContext {
+public class
+BaseContext {
 
     public static ThreadLocal<Long> threadLocalId = new ThreadLocal<>();
 
