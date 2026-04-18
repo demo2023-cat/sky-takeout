@@ -5,6 +5,7 @@ import com.sky.dto.DishPageQueryDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
+import com.sky.vo.DishVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,31 @@ public class DishController {
     public Result delete(@RequestParam List< Long> ids){
         log.info("菜品删除{}", ids);
         dishService.delete(ids);
+        return Result.success();
+    }
+    @ApiOperation("菜品起售停售")
+    @PostMapping("/status/{status}")
+    public Result startOrStop(@PathVariable Integer status,@RequestParam Long id){
+        log.info("菜品起售停售{}，{}", id, status);
+        dishService.startOrStop(status,id);
+        return Result.success();
+    }
+
+    @ApiOperation("id查询菜品")
+    @GetMapping("/{id}")
+    public Result<DishVO> getById(@PathVariable Long id){
+        log.info("id查询菜品{}", id);
+        DishVO dishVO = dishService.getByIdWithFlavors(id);
+        return Result.success(dishVO);
+    }
+
+    @ApiOperation("修改菜品")
+    @PutMapping
+    public Result<DishDTO> update(@RequestBody DishDTO dishDTO){
+        log.info("修改菜品{}", dishDTO);
+        dishDTO.getFlavors().forEach(flavor -> flavor.setDishId(dishDTO.getId()));
+        log.info("修改口味{}", dishDTO.getFlavors());
+        dishService.update(dishDTO);
         return Result.success();
     }
 }

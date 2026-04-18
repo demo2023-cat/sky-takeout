@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -75,6 +77,27 @@ public class DishServiceImpl implements DishService {
 //            dishFlavorMapper.deleteByDishId(id);
 //        }
         dishMapper.delete(ids);
+    }
+
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        dishMapper.startOrStop(status, id);
+    }
+
+    @Override
+    public DishVO getByIdWithFlavors(Long id) {
+        DishVO dishVO = dishMapper.getByIdWithFlavors(id);
+        dishVO.setFlavors(dishFlavorMapper.getByDishId(id));
+        return dishVO;
+    }
+
+    @Override
+    public void update(DishDTO dishDTO) {
+        long dishId = dishDTO.getId();
+        List<Long> ids = Collections.singletonList(dishId);
+        dishFlavorMapper.deleteByDishIds(ids);
+        dishFlavorMapper.insert(dishDTO.getFlavors());
+        dishMapper.update(dishDTO);
     }
 
 }
