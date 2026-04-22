@@ -9,6 +9,7 @@ import com.sky.vo.DishVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,9 @@ public class DishController {
     @Autowired
     private DishService dishService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     /**
      * 新增菜品
      * @param dishDTO
@@ -31,6 +35,7 @@ public class DishController {
     public Result<DishDTO> saveDish(@RequestBody DishDTO dishDTO) {
         log.info("新增菜品{}", dishDTO);
         dishService.save(dishDTO);
+        redisTemplate.delete("dish_" + dishDTO.getCategoryId());
         return Result.success();
     }
 
@@ -46,6 +51,7 @@ public class DishController {
     public Result delete(@RequestParam List< Long> ids){
         log.info("菜品删除{}", ids);
         dishService.delete(ids);
+        redisTemplate.delete(redisTemplate.keys("dish_*"));
         return Result.success();
     }
     @ApiOperation("菜品起售停售")
@@ -53,6 +59,7 @@ public class DishController {
     public Result startOrStop(@PathVariable Integer status,@RequestParam Long id){
         log.info("菜品起售停售{}，{}", id, status);
         dishService.startOrStop(status,id);
+        redisTemplate.delete(redisTemplate.keys("dish_*"));
         return Result.success();
     }
 
@@ -71,6 +78,8 @@ public class DishController {
         dishDTO.getFlavors().forEach(flavor -> flavor.setDishId(dishDTO.getId()));
         log.info("修改口味{}", dishDTO.getFlavors());
         dishService.update(dishDTO);
+        redisTemplate.delete("dish_" + dishDTO.getCategoryId());
         return Result.success();
     }
+
 }
