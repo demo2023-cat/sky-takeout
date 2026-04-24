@@ -2,6 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
@@ -81,5 +82,11 @@ public class DishController {
         redisTemplate.delete("dish_" + dishDTO.getCategoryId());
         return Result.success();
     }
-
+    @ApiOperation("按照分类id查询菜品")
+    @GetMapping("/list")
+    public Result<List<DishVO>> getDishByCategoryId(@RequestParam Integer categoryId){
+        log.info("按照分类id查询菜品{}", categoryId);
+        List<DishVO> list = dishService.getDishByCategoryId(categoryId);
+        return Result.success(list);
+    }
 }

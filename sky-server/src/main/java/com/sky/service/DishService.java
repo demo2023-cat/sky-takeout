@@ -29,4 +29,5 @@ public interface DishService {
      */
     List<DishVO> listWithFlavor(Dish dish);
 
+    List<DishVO> getDishByCategoryId(Integer categoryId);
 }

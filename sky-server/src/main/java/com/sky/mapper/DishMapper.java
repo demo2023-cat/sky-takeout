@@ -44,4 +44,7 @@ public interface DishMapper {
     void update(DishDTO dishDTO);
 
     List<Dish> list(Dish dish);
+
+    @Select("select * from dish where category_id = #{categoryId}")
+    List<DishVO> getDishByCategoryId(Integer categoryId);
 }
