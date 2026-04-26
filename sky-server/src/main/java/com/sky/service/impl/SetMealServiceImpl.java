@@ -15,6 +15,8 @@ import com.sky.vo.SetmealVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -27,6 +29,7 @@ public class SetMealServiceImpl implements SetMealService {
     private DishMapper dishMapper;
 
     @Override
+    @Transactional
     public void saveWithDish(SetmealDTO setmealDTO) {
         Setmeal setMeal = new Setmeal();
         BeanUtils.copyProperties(setmealDTO, setMeal);
@@ -45,6 +48,7 @@ public class SetMealServiceImpl implements SetMealService {
     }
 
     @Override
+    @Transactional
     public void deleteBatch(List<Long> ids) {
         setmealMapper.deleteBatch(ids);
         ids.forEach(id->setmealDishMapper.deleteBySetmealId(id));
@@ -56,6 +60,7 @@ public class SetMealServiceImpl implements SetMealService {
     }
 
     @Override
+    @Transactional
     public void update(SetmealDTO setmealDTO) {
         Setmeal setmeal = new Setmeal();
         BeanUtils.copyProperties(setmealDTO, setmeal);
