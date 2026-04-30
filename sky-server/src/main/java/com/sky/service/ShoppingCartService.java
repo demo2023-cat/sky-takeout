@@ -10,7 +10,7 @@ public interface ShoppingCartService {
 
     List<ShoppingCart> list(Long userId);
 
-    int clean();
+    int clean(long userId);
 
     int sub(ShoppingCartDTO shoppingCartDTO);
 }

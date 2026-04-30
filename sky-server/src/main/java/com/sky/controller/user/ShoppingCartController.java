@@ -41,7 +41,7 @@ public class ShoppingCartController {
     @DeleteMapping("/clean")
     public Result clean() {
         log.info("清空购物车");
-        return Result.success(shoppingCartService.clean());
+        return Result.success(shoppingCartService.clean(BaseContext.getCurrentId()));
     }
 
     @ApiOperation("减少购物车中的商品数量1")
