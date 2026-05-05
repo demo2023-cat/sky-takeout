@@ -13,4 +13,6 @@ public interface ShoppingCartService {
     int clean(long userId);
 
     int sub(ShoppingCartDTO shoppingCartDTO);
+
+    void insertBatch(List<ShoppingCart> shoppingCartList);
 }

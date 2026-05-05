@@ -231,4 +231,53 @@ public class OrderServiceImpl implements OrderService {
         return new PageResult(total, orderVOList);
     }
 
+    @Override
+    public OrderVO getOrderDetailByOrderId(Long orderId) {
+        Orders byId = orderMapper.getById(orderId);
+        OrderVO orderVO = new OrderVO();
+        BeanUtils.copyProperties(byId,orderVO);
+        List<OrderDetail> orderDetailList = orderDetailMapper.getOrderDetailByOrderId(orderId);
+        orderVO.setOrderDetailList(orderDetailList);
+        return orderVO;
+    }
+
+    @Override
+    public Integer cancelByUser(Long id) {
+        Orders orders = orderMapper.getById(id);
+        if (orders == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        Integer status = orders.getStatus();
+        if (status >= Orders.CONFIRMED){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        if (status == Orders.TO_BE_CONFIRMED){
+            log.info("为用户退款");
+            orders.setPayStatus(Orders.REFUND);
+        }
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelTime(LocalDateTime.now());
+        orders.setCancelReason("用户取消");
+        return orderMapper.update(orders);
+    }
+
+    @Override
+    public void repetition(Long id) {
+        List<OrderDetail> orderDetailList = orderDetailMapper.getOrderDetailByOrderId(id);
+        if(orderDetailList.isEmpty()){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        List<ShoppingCart> shoppingCartList = new ArrayList<>();
+        for (OrderDetail orderDetail : orderDetailList) {
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(orderDetail, shoppingCart);
+            shoppingCart.setUserId(BaseContext.getCurrentId());
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            shoppingCartList.add(shoppingCart);
+        }
+        shoppingCartService.insertBatch(shoppingCartList);
+
+
+    }
+
 }

@@ -86,4 +86,9 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         }
         return shoppingCartMapper.deleteById(list.get(0).getId());
     }
+
+    @Override
+    public void insertBatch(List<ShoppingCart> shoppingCartList) {
+        shoppingCartMapper.insertBatch(shoppingCartList);
+    }
 }
