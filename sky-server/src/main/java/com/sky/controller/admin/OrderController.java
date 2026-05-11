@@ -51,4 +51,14 @@ public class OrderController {
     public Result confirm(@RequestBody OrdersConfirmDTO ordersConfirmDTO) {
         return Result.success(orderService.confirm(ordersConfirmDTO.getId()));
     }
+
+    @PutMapping("/delivery/{id}")
+    public Result delivery(@PathVariable Long id){
+        return Result.success(orderService.delivery(id));
+    }
+
+    @PutMapping("/complete/{id}")
+    public Result complete(@PathVariable Long id){
+        return Result.success(orderService.complete(id));
+    }
 }

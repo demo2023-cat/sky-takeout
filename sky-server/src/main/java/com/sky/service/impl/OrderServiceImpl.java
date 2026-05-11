@@ -51,6 +51,13 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
+
+    /**
+     * 用户下单
+     *
+     * @param ordersSubmitDTO
+     * @return
+     */
     @Override
     @Transactional
     public OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO) {
@@ -95,6 +102,7 @@ public class OrderServiceImpl implements OrderService {
                 .orderTime(orders.getOrderTime())
                 .build();
     }
+    
     /**
      * 订单支付
      *
@@ -136,6 +144,12 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    /**
+     * 订单分页查询
+     *
+     * @param ordersPageQueryDTO
+     * @return
+     */
     @Override
     public PageResult pageQuery(OrdersPageQueryDTO ordersPageQueryDTO) {
         log.info("查询订单：{}", ordersPageQueryDTO);
@@ -144,6 +158,12 @@ public class OrderServiceImpl implements OrderService {
         return new PageResult(page.getTotal(), page.getResult());
     }
 
+    /**
+     * 取消订单
+     *
+     * @param ordersCancelDTO
+     * @return
+     */
     @Override
     public int cancel(OrdersCancelDTO ordersCancelDTO) {
          log.info("取消订单，参数：{}", ordersCancelDTO);
@@ -169,6 +189,12 @@ public class OrderServiceImpl implements OrderService {
 
     }
 
+    /**
+     * 拒单
+     *
+     * @param ordersRejectionDTO
+     * @return
+     */
     @Override
     public int reject(OrdersRejectionDTO ordersRejectionDTO){
         log.info("拒绝订单：{}", ordersRejectionDTO);
@@ -178,10 +204,10 @@ public class OrderServiceImpl implements OrderService {
         }
         if(ordersDB.getStatus().equals(Orders.PAID)){
 //            String refund = weChatPayUtil.refund(
-//                    ordersDB.getNumber(),
-//                    ordersDB.getNumber(),
-//                    new BigDecimal(0.01),
-//                    new BigDecimal(0.01));
+//                     ordersDB.getNumber(),
+//                     ordersDB.getNumber(),
+//                     new BigDecimal(0.01),
+//                     new BigDecimal(0.01));
             log.info("申请退款");
         }
         Orders orders = Orders.builder()
@@ -193,6 +219,12 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.update(orders);
     }
 
+    /**
+     * 历史订单查询
+     *
+     * @param ordersPageQuery
+     * @return
+     */
     @Override
     public PageResult historyPageQuery(OrdersPageQueryDTO ordersPageQuery) {
         ordersPageQuery.setUserId(BaseContext.getCurrentId());
@@ -232,6 +264,12 @@ public class OrderServiceImpl implements OrderService {
         return new PageResult(total, orderVOList);
     }
 
+    /**
+     * 查询订单详情
+     *
+     * @param orderId
+     * @return
+     */
     @Override
     public OrderVO getOrderDetailByOrderId(Long orderId) {
         Orders byId = orderMapper.getById(orderId);
@@ -242,6 +280,12 @@ public class OrderServiceImpl implements OrderService {
         return orderVO;
     }
 
+    /**
+     * 用户取消订单
+     *
+     * @param id
+     * @return
+     */
     @Override
     public Integer cancelByUser(Long id) {
         Orders orders = orderMapper.getById(id);
@@ -262,6 +306,11 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.update(orders);
     }
 
+    /**
+     * 再来一单
+     *
+     * @param id
+     */
     @Override
     public void repetition(Long id) {
         List<OrderDetail> orderDetailList = orderDetailMapper.getOrderDetailByOrderId(id);
@@ -281,6 +330,11 @@ public class OrderServiceImpl implements OrderService {
 
     }
 
+    /**
+     * 各个状态的订单数量统计
+     *
+     * @return
+     */
     @Override
     public OrderStatisticsVO statistics() {
         Integer toBeConfirmed = orderMapper.countStatus(Orders.TO_BE_CONFIRMED);
@@ -295,6 +349,12 @@ public class OrderServiceImpl implements OrderService {
         return orderStatisticsVO;
     }
 
+    /**
+     * 接单
+     *
+     * @param id
+     * @return
+     */
     @Override
     public Integer confirm(Long id) {
         Orders byId = orderMapper.getById(id);
@@ -306,6 +366,46 @@ public class OrderServiceImpl implements OrderService {
         }
         byId.setStatus(Orders.CONFIRMED);
         return (orderMapper.update(byId));
+    }
+
+    /**
+     * 派送订单
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Integer delivery(Long id) {
+        Orders byId = orderMapper.getById(id);
+        if (byId == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if(!byId.getStatus().equals(Orders.CONFIRMED)){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        byId.setStatus(Orders.DELIVERY_IN_PROGRESS);
+        return orderMapper.update(byId);
+    }
+
+    /**
+     * 完成订单
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Integer complete(Long id) {
+
+        Orders byId = orderMapper.getById(id);
+        if (byId == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if(!byId.getStatus().equals(Orders.DELIVERY_IN_PROGRESS)){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        byId.setStatus(Orders.COMPLETED);
+        byId.setDeliveryTime(LocalDateTime.now());
+        return orderMapper.update(byId);
     }
 
 }

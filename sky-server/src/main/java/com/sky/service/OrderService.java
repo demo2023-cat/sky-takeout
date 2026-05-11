@@ -45,4 +45,8 @@ public interface OrderService {
     OrderStatisticsVO statistics();
 
     Integer confirm(Long id);
+
+    Integer delivery(Long id);
+
+    Integer complete(Long id);
 }
