@@ -1,6 +1,6 @@
 package com.sky.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
@@ -22,16 +22,16 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,6 +51,8 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     /**
      * 用户下单
@@ -140,8 +142,13 @@ public class OrderServiceImpl implements OrderService {
                 .payStatus(Orders.PAID)
                 .checkoutTime(LocalDateTime.now())
                 .build();
-
         orderMapper.update(orders);
+        Map<Object, Object> map= new HashMap<>();
+        map.put("type",1);
+        map.put("orderId", ordersDB.getId());
+        map.put("content" , "订单号：" + outTradeNo);
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
     /**
@@ -406,6 +413,23 @@ public class OrderServiceImpl implements OrderService {
         byId.setStatus(Orders.COMPLETED);
         byId.setDeliveryTime(LocalDateTime.now());
         return orderMapper.update(byId);
+    }
+
+    @Override
+    public void reminder(Long id) {
+        Orders byId = orderMapper.getById(id);
+        if (byId == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if(!byId.getStatus().equals(Orders.TO_BE_CONFIRMED) || !byId.getPayStatus().equals(Orders.PAID)){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+            Map<Object, Object> map = new HashMap<>();
+            map.put("type", 2);
+            map.put("orderId", id);
+            map.put("content", "订单号：" + id);
+            String json = JSON.toJSONString(map);
+            webSocketServer.sendToAllClient(json);
     }
 
 }
