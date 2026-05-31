@@ -6,7 +6,9 @@ import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.result.PageResult;
 
-public interface EmployeeService {
+import com.baomidou.mybatisplus.extension.service.IService;
+
+public interface EmployeeService extends IService<Employee> {
 
     /**
      * 员工登录
