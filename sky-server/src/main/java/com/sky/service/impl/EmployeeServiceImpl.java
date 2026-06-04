@@ -1,7 +1,8 @@
 package com.sky.service.impl;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.util.StringUtils;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
@@ -30,9 +31,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements EmployeeService {
 
 
-    @Autowired
-    private EmployeeMapper employeeMapper;
-
     /**
      * 员工登录
      *
@@ -43,29 +41,29 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         String username = employeeLoginDTO.getUsername();
         String password = employeeLoginDTO.getPassword();
 
-        //1、根据用户名查询数据库中的数据
-        Employee employee = employeeMapper.getByUsername(username);
+        // 1、根据用户名查询数据库中的数据 (使用 MP 的 getOne 方法，免去依赖 Mapper 自定义方法)
+        Employee employee = this.getOne(new LambdaQueryWrapper<Employee>()
+                .eq(Employee::getUsername, username));
 
-        //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
+        // 2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
         if (employee == null) {
-            //账号不存在
+            // 账号不存在
             throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
 
-        //密码比对
+        // 密码比对
         password = DigestUtils.md5DigestAsHex(password.getBytes());
         if (!password.equals(employee.getPassword())) {
-            //密码错误
+            // 密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
         }
 
         if (employee.getStatus() == StatusConstant.DISABLE) {
-
-            //账号被锁定
+            // 账号被锁定
             throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
         }
 
-        //3、返回实体对象
+        // 3、返回实体对象
         return employee;
     }
 
@@ -79,22 +77,24 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         BeanUtils.copyProperties(employeeDTO, employee);
         employee.setStatus(StatusConstant.ENABLE);
         employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
-//        employee.setCreateTime(LocalDateTime.now());
-//        employee.setUpdateTime(LocalDateTime.now());
-//        employee.setCreateUser(BaseContext.getCurrentId());
-//        employee.setUpdateUser(BaseContext.getCurrentId());
-        // employeeMapper.insert(employee); // 原 MyBatis 方式
         this.save(employee); // MyBatis-Plus 方式
     }
 
     @Override
     public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
-        PageHelper.startPage(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
-        Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
+        // 1. 创建 MyBatis-Plus 的 Page 分页对象
+        Page<Employee> pageParam = new Page<>(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
 
-        long total = page.getTotal();
-        List<Employee> records =page.getResult();
-        return new PageResult(total, records);
+        // 2. 构造查询条件
+        LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(StringUtils.hasText(employeePageQueryDTO.getName()), Employee::getName, employeePageQueryDTO.getName())
+                    .orderByDesc(Employee::getCreateTime);
+
+        // 3. 调用 Service 的 page 方法执行分页查询
+        this.page(pageParam, queryWrapper);
+
+        // 4. 获取结果并封装为 PageResult 返回
+        return new PageResult(pageParam.getTotal(), pageParam.getRecords());
     }
 
     @Override
@@ -103,13 +103,15 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
                 .status(status)
                 .id(id)
                 .build();
-                employeeMapper.update(employee);
+        this.updateById(employee);
     }
 
     @Override
     public Employee getById(Long id) {
-        Employee employee = employeeMapper.getById(id);
-        employee.setPassword("****");
+        Employee employee = super.getById(id);
+        if (employee != null) {
+            employee.setPassword("****");
+        }
         return employee;
     }
 
@@ -119,7 +121,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         BeanUtils.copyProperties(employeeDTO, employee);
 //        employee.setUpdateTime(LocalDateTime.now());
 //        employee.setUpdateUser(BaseContext.getCurrentId());
-        employeeMapper.update(employee);
+        this.updateById(employee);
     }
 
 }
