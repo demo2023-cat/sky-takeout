@@ -8,7 +8,9 @@ import com.sky.vo.DishVO;
 
 import java.util.List;
 
-public interface DishService {
+import com.baomidou.mybatisplus.extension.service.IService;
+
+public interface DishService extends IService<Dish> {
 
     void save(DishDTO dishDTO);
 

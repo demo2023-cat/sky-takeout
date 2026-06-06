@@ -14,16 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.Map;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
 @Mapper
-public interface SetMealMapper {
+public interface SetMealMapper extends BaseMapper<Setmeal> {
 
     /**
      * 根据分类id查询套餐的数量
      * @param id
      * @return
      */
-    @Select("select count(id) from setmeal where category_id = #{categoryId}")
-    Integer countByCategoryId(Long id);
+    // @Select("select count(id) from setmeal where category_id = #{categoryId}")
+    // Integer countByCategoryId(Long id); // 已由 selectCount 接管
 
     @Select("select count(id) from setmeal_dish where dish_id = #{id}")
     int countByDishId(Long id);

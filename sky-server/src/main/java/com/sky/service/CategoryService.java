@@ -6,8 +6,9 @@ import com.sky.entity.Category;
 import com.sky.result.PageResult;
 import java.util.List;
 
-public interface
-CategoryService {
+import com.baomidou.mybatisplus.extension.service.IService;
+
+public interface CategoryService extends IService<Category> {
 
     /**
      * 新增分类

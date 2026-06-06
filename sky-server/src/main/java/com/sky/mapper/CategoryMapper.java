@@ -1,53 +1,19 @@
 package com.sky.mapper;
 
-import com.github.pagehelper.Page;
-import com.sky.annotation.AutoFill;
-import com.sky.enumeration.OperationType;
-import com.sky.dto.CategoryPageQueryDTO;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.sky.entity.Category;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import java.util.List;
 
 @Mapper
-public interface CategoryMapper {
+public interface CategoryMapper extends BaseMapper<Category> {
 
-    /**
-     * 插入数据
-     * @param category
-     */
-    @Insert("insert into category(type, name, sort, status, create_time, update_time, create_user, update_user)" +
-            " VALUES" +
-            " (#{type}, #{name}, #{sort}, #{status}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})")
-    @AutoFill(value = OperationType.INSERT)
-    void insert(Category category);
+    // void insert(Category category); // 原 MyBatis 手写 SQL 插入，已被 BaseMapper 接管
 
-    /**
-     * 分页查询
-     * @param categoryPageQueryDTO
-     * @return
-     */
-    Page<Category> pageQuery(CategoryPageQueryDTO categoryPageQueryDTO);
+    // Page<Category> pageQuery(CategoryPageQueryDTO categoryPageQueryDTO); // 原 MyBatis 手写 SQL 分页，已被 page() 接管
 
-    /**
-     * 根据id删除分类
-     * @param id
-     */
-    @Delete("delete from category where id = #{id}")
-    void deleteById(Long id);
+    // void deleteById(Long id); // 原 MyBatis 手写 SQL 删除，已被 removeById() 接管
 
-    /**
-     * 根据id修改分类
-     * @param category
-     */
-    @AutoFill(value = OperationType.UPDATE)
-    void update(Category category);
+    // void update(Category category); // 原 MyBatis 手写 SQL 更新，已被 updateById() 接管
 
-    /**
-     * 根据类型查询分类
-     * @param type
-     * @return
-     */
-    List<Category> list(Integer type);
+    // List<Category> list(Integer type); // 原 MyBatis 手写 SQL 列表查询，已被 super.list() 接管
 }
