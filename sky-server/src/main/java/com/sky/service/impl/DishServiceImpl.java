@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
@@ -8,11 +9,15 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
+import com.sky.entity.SetmealDish;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.DishFlavorMapper;
+import com.sky.mapper.SetMealDishMapper;
 import com.sky.mapper.SetMealMapper;
 import com.sky.result.PageResult;
+import com.sky.service.DishFlavorService;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import org.springframework.beans.BeanUtils;
@@ -33,19 +38,22 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     @Autowired
     private DishFlavorMapper dishFlavorMapper;
     @Autowired
+    private DishFlavorService dishFlavorService;
+    @Autowired
     private SetMealMapper setmealMapper;
+    @Autowired
+    private SetMealDishMapper setmealDishMapper;
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void save(DishDTO dishDTO) {
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
-        dishMapper.insert(dish);
+        this.save(dish);
         List<DishFlavor> flavors = dishDTO.getFlavors();
         if(flavors != null && !flavors.isEmpty())
             {   long dishId = dish.getId();
                 flavors.forEach(dishFlavor -> dishFlavor.setDishId(dishId));
-                dishFlavorMapper.insert(flavors);}
-
+                dishFlavorService.saveBatch(flavors);}
     }
 
     @Override
@@ -53,53 +61,58 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
         PageHelper.startPage(dishPageQueryDTO.getPage(), dishPageQueryDTO.getPageSize());
         Page<DishVO> page = dishMapper.pageQuery(dishPageQueryDTO);
         return new PageResult(page.getTotal(), page.getResult());
-
     }
 
     @Override
     @Transactional
     public void delete(List<Long> ids) {
         //判断dish是否启用
-        for (Long id : ids) {
-            Integer dish_status = dishMapper.getStatusById(id);
-            if(dish_status.equals(StatusConstant.ENABLE)){
-                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
-            }
+        long count = this.count(new LambdaQueryWrapper<Dish>().in(Dish::getId, ids).eq(Dish::getStatus, StatusConstant.ENABLE));
+        if(count > 0){
+            throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
         }
+
         //判断dish是否被setmeal关联
-        for (Long id : ids){
-            int count =setmealMapper.countByDishId(id);
-            if(count != 0){
-                throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
-            }
+        count = setmealDishMapper.selectCount(new LambdaQueryWrapper<SetmealDish>().in(SetmealDish::getDishId, ids));
+        if(count > 0){
+            throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
-        //删除dish及flavor
-//        for (Long id : ids){
-//            dishMapper.delete(id);
-//            dishFlavorMapper.deleteByDishId(id);
-//        }
-        dishMapper.delete(ids);
+        this.removeByIds(ids);
+        //连同口味数据一起删除
+        dishFlavorService.remove(new LambdaQueryWrapper<DishFlavor>().in(DishFlavor::getDishId, ids));
     }
 
     @Override
     public void startOrStop(Integer status, Long id) {
-        dishMapper.startOrStop(status, id);
+        this.updateById(Dish.builder().id(id).status(status).build());
     }
 
     @Override
     public DishVO getByIdWithFlavors(Long id) {
-        DishVO dishVO = dishMapper.getByIdWithFlavors(id);
+        Dish dish = this.getById(id);
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish, dishVO);
         dishVO.setFlavors(dishFlavorMapper.getByDishId(id));
         return dishVO;
     }
 
     @Override
+    @Transactional
     public void update(DishDTO dishDTO) {
-        long dishId = dishDTO.getId();
-        List<Long> ids = Collections.singletonList(dishId);
-        dishFlavorMapper.deleteByDishIds(ids);
-        dishFlavorMapper.insert(dishDTO.getFlavors());
-        dishMapper.update(dishDTO);
+        // 1. 根据dishId删除原有的口味数据
+        dishFlavorService.remove(new LambdaQueryWrapper<DishFlavor>().eq(DishFlavor::getDishId, dishDTO.getId()));
+        
+        // 2. 重新插入新的口味数据
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+        if(flavors != null && !flavors.isEmpty()) {
+            flavors.forEach(flavor -> flavor.setDishId(dishDTO.getId()));
+            dishFlavorService.saveBatch(flavors);
+        }
+        
+        // 3. 更新菜品基本信息
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO, dish);
+        this.updateById(dish);
     }
 
     @Override
@@ -129,7 +142,15 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Override
     public List<DishVO> getDishByCategoryId(Integer categoryId) {
-        return dishMapper.getDishByCategoryId(categoryId);
+        List<Dish> dishList = this.list(new LambdaQueryWrapper<Dish>().eq(Dish::getCategoryId, categoryId));
+        return dishList.stream().map(dish -> DishVO.builder()
+                .id(dish.getId())
+                .name(dish.getName())
+                .price(dish.getPrice())
+                .image(dish.getImage())
+                .description(dish.getDescription())
+                .status(dish.getStatus())
+                .build()).toList();
     }
 
 }

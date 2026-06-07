@@ -41,7 +41,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         }
         else{
             if(shoppingCartDTO.getDishId() != null){
-                Dish dish = dishMapper.getById(shoppingCartDTO.getDishId());
+                Dish dish = dishMapper.selectById(shoppingCartDTO.getDishId());
                 shoppingCart.setName(dish.getName());
                 shoppingCart.setImage(dish.getImage());
                 shoppingCart.setAmount(dish.getPrice());

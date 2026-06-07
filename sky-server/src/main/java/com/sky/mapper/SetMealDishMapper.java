@@ -7,8 +7,10 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
 @Mapper
-public interface SetMealDishMapper {
+public interface SetMealDishMapper extends BaseMapper<SetmealDish> {
     /**
      * 根据菜品id查询对应的套餐id
      *
