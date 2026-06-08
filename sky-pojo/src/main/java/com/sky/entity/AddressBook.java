@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 /**
  * 地址簿
  */
@@ -14,10 +18,12 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName("address_book")
 public class AddressBook implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     //用户id

@@ -3,11 +3,11 @@ package com.sky.service;
 import com.sky.entity.AddressBook;
 import java.util.List;
 
-public interface AddressBookService {
+import com.baomidou.mybatisplus.extension.service.IService;
+
+public interface AddressBookService extends IService<AddressBook> {
 
     List<AddressBook> list(AddressBook addressBook);
-
-    void save(AddressBook addressBook);
 
     AddressBook getById(Long id);
 

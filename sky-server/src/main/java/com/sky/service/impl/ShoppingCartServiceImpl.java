@@ -17,9 +17,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
 @Service
 @Slf4j
-public class ShoppingCartServiceImpl implements ShoppingCartService {
+public class ShoppingCartServiceImpl extends ServiceImpl<ShoppingCartMapper, ShoppingCart> implements ShoppingCartService {
     @Autowired
     private ShoppingCartMapper shoppingCartMapper;
     @Autowired
@@ -28,16 +31,22 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     private SetMealMapper setmealMapper;
     @Override
     public void add(ShoppingCartDTO shoppingCartDTO) {
+
         ShoppingCart shoppingCart = new ShoppingCart();
         BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
         shoppingCart.setUserId(BaseContext.getCurrentId());
         log.info("购物车用户id{}",shoppingCart.getUserId());
-        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
+        LambdaQueryWrapper<ShoppingCart> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ShoppingCart::getUserId, BaseContext.getCurrentId())
+                .eq(shoppingCartDTO.getDishId() != null , ShoppingCart::getDishId, shoppingCartDTO.getDishId())
+                .eq(shoppingCartDTO.getSetmealId() != null , ShoppingCart::getSetmealId, shoppingCartDTO.getSetmealId())
+                .eq(shoppingCartDTO.getDishFlavor() != null , ShoppingCart::getDishFlavor, shoppingCartDTO.getDishFlavor());
+        ShoppingCart result = this.getOne(queryWrapper);
         //判断当前菜品或套餐是否在购物车中
-        if(list != null && list.size() > 0){
-            ShoppingCart cart = list.get(0);
-            cart.setNumber(cart.getNumber() + 1);
-            shoppingCartMapper.updateById(cart);
+        if(result != null){
+            result.setNumber(result.getNumber() + 1);
+            this.updateById(result);
+            return;
         }
         else{
             if(shoppingCartDTO.getDishId() != null){
@@ -48,7 +57,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
             }
             else{
-                Setmeal setmeal = setmealMapper.getById(shoppingCartDTO.getSetmealId());
+                Setmeal setmeal = setmealMapper.selectById(shoppingCartDTO.getSetmealId());
                 shoppingCart.setName(setmeal.getName());
                 shoppingCart.setImage(setmeal.getImage());
                 shoppingCart.setAmount(setmeal.getPrice());
@@ -58,37 +67,42 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             shoppingCart.setNumber(1);
         }
 
-        shoppingCartMapper.insert(shoppingCart);
+        this.save(shoppingCart);
     }
 
     @Override
     public List<ShoppingCart> list(Long userId) {
-        ShoppingCart shoppingCart = new ShoppingCart();
-        shoppingCart.setUserId(userId);
-        return shoppingCartMapper.list(shoppingCart);
+        return this.list(new LambdaQueryWrapper<ShoppingCart>().eq(ShoppingCart::getUserId, userId));
     }
 
     @Override
     public int clean(long userId) {
-        return shoppingCartMapper.deleteByUserId(userId);
+        this.remove(new LambdaQueryWrapper<ShoppingCart>().eq(ShoppingCart::getUserId, userId));
+        return 1;
     }
 
     @Override
     public int sub(ShoppingCartDTO shoppingCartDTO) {
+
         ShoppingCart shoppingCart = new ShoppingCart();
         BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
         shoppingCart.setUserId(BaseContext.getCurrentId());
-        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
-        if (list.get(0).getNumber() > 1) {
-            list.get(0).setNumber(list.get(0).getNumber() - 1);
-            shoppingCartMapper.updateById(list.get(0));
+        LambdaQueryWrapper<ShoppingCart> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ShoppingCart::getUserId, BaseContext.getCurrentId())
+                .eq(shoppingCartDTO.getDishId() != null , ShoppingCart::getDishId, shoppingCartDTO.getDishId())
+                .eq(shoppingCartDTO.getSetmealId() != null , ShoppingCart::getSetmealId, shoppingCartDTO.getSetmealId())
+                .eq(shoppingCartDTO.getDishFlavor() != null , ShoppingCart::getDishFlavor, shoppingCartDTO.getDishFlavor());
+        ShoppingCart result = this.getOne(queryWrapper);
+        if (result != null && result.getNumber() > 1) {
+            result.setNumber(result.getNumber() - 1);
+            this.updateById(result);
             return 1;
         }
-        return shoppingCartMapper.deleteById(list.get(0).getId());
+        return this.removeById(result)? 1 : 0;
     }
 
     @Override
     public void insertBatch(List<ShoppingCart> shoppingCartList) {
-        shoppingCartMapper.insertBatch(shoppingCartList);
+        this.saveBatch(shoppingCartList);
     }
 }

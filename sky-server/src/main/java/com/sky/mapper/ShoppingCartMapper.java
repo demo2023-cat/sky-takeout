@@ -9,21 +9,8 @@ import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
 @Mapper
-public interface ShoppingCartMapper {
-    List<ShoppingCart> list(ShoppingCart shoppingCart);
-
-    @Update("update shopping_cart set number = #{number} where id = #{id}")
-    void updateById(ShoppingCart cart);
-
-    @Insert("insert into shopping_cart (name, user_id,image, dish_id, setmeal_id, dish_flavor, number, amount, create_time) values (#{name},  #{userId}, #{image}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount}, #{createTime})")
-    void insert(ShoppingCart shoppingCart);
-
-    @Delete("delete from shopping_cart where user_id = #{userId}")
-    int deleteByUserId(Long userId);
-
-    @Delete("delete from shopping_cart where id = #{id}")
-    int deleteById(Long id);
-
-    void insertBatch(List<ShoppingCart> shoppingCartList);
+public interface ShoppingCartMapper extends BaseMapper<ShoppingCart> {
 }

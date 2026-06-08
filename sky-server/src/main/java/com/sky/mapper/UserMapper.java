@@ -8,17 +8,9 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.Map;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
 @Mapper
-public interface UserMapper {
-    @Select("select * from user where openid = #{openid}")
-    User selectUserByOpenid(String openid);
-
-    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    @Insert("insert into user (openid, create_time) values (#{openid}, #{createTime})")
-    void insert(User user);
-
-    @Select("select * from user where id = #{id}")
-    User getById(Long userId);
-
+public interface UserMapper extends BaseMapper<User> {
     Integer countByMap(Map map);
 }

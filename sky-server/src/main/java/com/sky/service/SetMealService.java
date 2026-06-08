@@ -8,8 +8,9 @@ import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 
 import java.util.List;
+import com.baomidou.mybatisplus.extension.service.IService;
 
-public interface SetMealService {
+public interface SetMealService extends IService<Setmeal> {
 
     /**
      * 新增套餐，同时需要保存套餐和菜品的关联关系     *

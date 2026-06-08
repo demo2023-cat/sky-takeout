@@ -29,12 +29,7 @@ public interface SetMealMapper extends BaseMapper<Setmeal> {
 
     @Select("select count(id) from setmeal_dish where dish_id = #{id}")
     int countByDishId(Long id);
-    /**
-     * 动态条件查询套餐
-     * @param setmeal
-     * @return
-     */
-    List<Setmeal> list(Setmeal setmeal);
+
 
     /**
      * 根据套餐id查询菜品选项
@@ -46,27 +41,12 @@ public interface SetMealMapper extends BaseMapper<Setmeal> {
             "where sd.setmeal_id = #{setmealId}")
     List<DishItemVO> getDishItemBySetmealId(Long setmealId);
 
-    @AutoFill(value = OperationType.INSERT)
-    @Options(useGeneratedKeys = true , keyColumn = "id", keyProperty = "id" )
-    @Insert("insert into setmeal(name, category_id, price, image, description, create_time, update_time, create_user, update_user) values (#{name},#{categoryId},#{price},#{image},#{description},#{createTime},#{updateTime},#{createUser},#{updateUser}) ")
-    void save(Setmeal setmeal);
 
 
-    Page<Setmeal> pageQuery(SetmealPageQueryDTO setmealPageQueryDTO);
 
-    @Update("update setmeal set status = #{status} where id = #{id}")
-    void startOrStop(Integer status, Long id);
 
-    @Select("select * from setmeal where id = #{id}")
-    SetmealVO getByIdWithDish(Long id);
 
-    @AutoFill(value = OperationType.UPDATE)
-    void update(Setmeal setmeal);
 
-    void deleteBatch(List<Long> ids);
-
-    @Select("select * from setmeal where id = #{setmealId}")
-    Setmeal getById(Long setmealId);
 
     /**
      * 根据条件统计套餐数量

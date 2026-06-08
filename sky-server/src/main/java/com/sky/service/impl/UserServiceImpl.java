@@ -18,14 +18,16 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
 @Slf4j
 @Service
-public class UserServiceImpl implements UserService {
-    @Autowired
-    private UserMapper userMapper;
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Autowired
     private WeChatProperties weChatProperties;
     public static final String WechatHttps = "https://api.weixin.qq.com/sns/jscode2session";
+    
     @Override
     public User login(UserLoginDTO userLoginDTO) {
         log.info("微信登录，参数：{}", userLoginDTO);
@@ -35,13 +37,13 @@ public class UserServiceImpl implements UserService {
             throw new LoginFailedException(MessageConstant.LOGIN_FAILED);
         }
         //判断是否新用户
-        User user = userMapper.selectUserByOpenid(openid);
+        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
         if (user == null){
             user = User.builder()
                     .openid(openid)
                     .createTime(LocalDateTime.now())
                     .build();
-            userMapper.insert(user);
+            this.save(user);
         }
         //返回用户数据
         return user;
